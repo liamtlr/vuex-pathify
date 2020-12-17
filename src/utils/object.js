@@ -73,38 +73,52 @@ export function getValue (obj, path) {
 }
 
 /**
- * Sets a value on an object, based on a path to the property
+ * Tests whether a string is numeric
  *
- * @param   {Object}                obj       The Object to set the value on
- * @param   {string|Array|Object}   path      The path to a sub-property
- * @param   {*}                     value     The value to set
- * @param   {boolean}              [create]   Optional flag to create sub-properties; defaults to false
- * @returns {Boolean}                         True or false, depending if value was set
+ * @param   {string|number}   value   The value to be assessed
+ * @returns {boolean}
  */
+export function isNumeric (value) {
+  return typeof value === 'number' || /^\d+$/.test(value)
+}
+
 export function setValue (obj, path, value, create = false) {
   const keys = getKeys(path)
-  return keys.reduce((obj, key, index)  => {
-    const isIndex = /^\d+$/.test(key)
-    if (isIndex) {
-      key = parseInt(key)
-    }
+  return keys.reduce((obj, key, index) => {
+    // early return if no object
     if (!obj) {
       return false
     }
-    else if (index === keys.length - 1) {
+
+    // convert key to index if obj is an array and key is numeric
+    if (Array.isArray(obj) && isNumeric(key)) {
+      key = parseInt(key)
+    }
+
+    // if we're at the end of the path, set the value
+    if (index === keys.length - 1) {
       obj[key] = value
       return true
     }
+
+    // if the target property doesn't exist, the final option is to create one
     else if (!isObject(obj[key]) || !(key in obj)) {
       if (create) {
-        obj[key] = isIndex ? [] : {}
-      } else {
+        // create object or array, depending on next key
+        obj[key] = isNumeric(keys[index + 1])
+          ? []
+          : {}
+      }
+      else {
         return false
       }
     }
+
+    // if we get here, return the target property
     return obj[key]
   }, obj)
 }
+
 
 /**
  * Checks an object has a property, based on a path to the property
